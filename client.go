@@ -7,24 +7,36 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 // Client - Giphy go client
 type Client struct {
-	Key     string
-	HTTPS   bool
-	Host    string
-	Version string
+	Key        string
+	HTTPS      bool
+	Host       string
+	Version    string
+	HTTPClient *http.Client
 }
 
 // NewClient creates a new Giphy client with the specified key
-func NewClient(key string) *Client {
-	return &Client{
+// If no http.Client passed in, a new http.Client with default timeout of
+// 30 seconds is created
+func NewClient(key string, httpClient *http.Client) *Client {
+	client := &Client{
 		Key:     key,
 		HTTPS:   false,
 		Host:    "api.giphy.com",
 		Version: "v1",
 	}
+	if httpClient != nil {
+		client.HTTPClient = httpClient
+	} else {
+		client.HTTPClient = &http.Client{
+			Timeout: time.Second * 30,
+		}
+	}
+	return client
 }
 
 // Search for gifs. See https://github.com/Giphy/GiphyAPI#search-endpoint
@@ -51,15 +63,15 @@ func (client *Client) Search(query string, params *SearchParams) (*ListResponse,
 		searchURL = strings.Join(segments, "")
 	}
 	data := &ListResponse{}
-	err := get(searchURL, data)
+	err := get(client, searchURL, data)
 	if err != nil {
 		return nil, err
 	}
 	return data, nil
 }
 
-func get(url string, data interface{}) error {
-	response, err := http.Get(url)
+func get(client *Client, url string, data interface{}) error {
+	response, err := client.HTTPClient.Get(url)
 	if err != nil {
 		return err
 	}

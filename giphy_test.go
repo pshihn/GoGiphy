@@ -11,7 +11,7 @@ func setup() *Client {
 	if client != nil {
 		return client
 	}
-	client = NewClient("dc6zaTOxFJmzC")
+	client = NewClient("dc6zaTOxFJmzC", nil)
 	return client
 }
 
